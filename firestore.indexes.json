@@ -1,0 +1,47 @@
+{
+  "indexes": [
+    {
+      "collectionGroup": "questions",
+      "queryScope": "COLLECTION",
+      "fields": [
+        {
+          "fieldPath": "pasType",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "random",
+          "order": "ASCENDING"
+        }
+      ]
+    },
+    {
+      "collectionGroup": "questions",
+      "queryScope": "COLLECTION",
+      "fields": [
+        {
+          "fieldPath": "subject",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "random",
+          "order": "ASCENDING"
+        }
+      ]
+    },
+    {
+      "collectionGroup": "users",
+      "queryScope": "COLLECTION",
+      "fields": [
+        {
+          "fieldPath": "privateInfo",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "points",
+          "order": "DESCENDING"
+        }
+      ]
+    }
+  ],
+  "fieldOverrides": []
+}
