@@ -12,11 +12,8 @@ export function useGetUserImages(user,id, callback, sort=true) {
             callback((users) => {
               return [...users, user]
                 .sort((a, b) => {
-                  return b.points - a.points;
+                  return (a.position || b.points) - (b.position || a.points);
                 })
-                .filter((user) => {
-                  return user.points !== 0;
-                });
             });
           } else {
             callback((users) => {

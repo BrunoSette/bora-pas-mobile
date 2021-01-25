@@ -21,8 +21,7 @@ export default function RankingStack({route, navigation}) {
       <RankingPageStack.Screen
         options={({ route }) => ({ title: route.params.user.username })}
         component={UserStack}
-        name="UserPage"
-        initialParams={{pageType, uid}}
+        name="UserStack"
       />
     </RankingPageStack.Navigator>
   );

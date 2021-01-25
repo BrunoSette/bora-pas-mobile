@@ -82,9 +82,10 @@ export default function HomePage({ navigation }) {
                 let aUser = { ...user, id: userCred.id, position };
 
                 useGetUserImages(aUser, userCred.id, setFollowingUsers);
-                setIsLoadingFollowing(false)
+                
               });
             });
+            setIsLoadingFollowing(false);
         });
     }
 
@@ -125,6 +126,7 @@ export default function HomePage({ navigation }) {
           </TouchableOpacity>
 
           <Snippet size="big">
+            
             {!isLoadingRanking ? (
               <ScrollView style={{ paddingHorizontal: 8, paddingTop: 5 }}>
                 <Text style={{ fontWeight: "bold", fontSize: 22 }}>
@@ -163,7 +165,7 @@ export default function HomePage({ navigation }) {
           </Snippet>
 
           <Snippet size="big">
-            {!isLoadingFollowing ? (
+            {!isLoadingFollowing ? !followingUsers.length === 0? (
               <ScrollView style={{ paddingHorizontal: 8, paddingTop: 0 }}>
                 <Text style={{ fontWeight: "bold", fontSize: 22 }}>
                   Você segue:
@@ -182,7 +184,9 @@ export default function HomePage({ navigation }) {
                   );
                 })}
               </ScrollView>
-            ) : (
+            ) : <View style={{width: '100%', alignItems: 'center'}}>
+              <Text style={{textAlign: 'center', width: '80%' , fontSize: 20, fontWeight: 'bold', color: 'grey'}}>Você ainda não segue ninguém</Text>
+            </View> : (
               <View
                 style={{
                   alignSelf: "center",

@@ -20,7 +20,7 @@ export default function UserStack({route, navigation}) {
       />
       <RankingPageStack.Screen
         options={{ headerShown: false }}
-        component={RankingStack}
+        component={Ranking}
         name="RankingStack"
         initialParams={{uid: user.id}}
       />

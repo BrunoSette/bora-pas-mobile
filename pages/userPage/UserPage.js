@@ -11,6 +11,7 @@ import { Checkbox } from "react-native-paper";
 
 export default function UserPage({ route, navigation }) {
   const { user } = route.params;
+  //console.log(user.username)
   const [globalState, setGlobalState] = useContext(GlobalContext);
   const [isLoading, setIsLoading] = useState(false);
   const [uid, setUid] = useState(user.id);
@@ -36,12 +37,15 @@ export default function UserPage({ route, navigation }) {
   const [isBeeigFollowed, setIsBeingFollowed] = useState(false);
   const [currentUserFollowing, setCurrentUserFollowing] = useState([]);
 
+    useEffect(()=> {
+        console.log(currentUsername)
+    }, [currentUsername])
+
   useEffect(() => {
     function checkFollowing() {
       if (currentUser.following.includes(user.id)) setIsBeingFollowed(true);
       else setIsBeingFollowed(false);
     }
-    console.log("cheking following");
     checkFollowing();
   }, []);
 
@@ -67,7 +71,6 @@ export default function UserPage({ route, navigation }) {
   }, []);
 
   useEffect(() => {
-      console.log("private: " + user.privateInfo);
     if (globalState.currentUser.uid === user.id) setIsCurrentUserPage(true);
   }, [globalState, user]);
 
@@ -258,7 +261,7 @@ export default function UserPage({ route, navigation }) {
                       return (
                         <TouchableOpacity
                           onPress={() => {
-                            navigation.push("UserPage", { user });
+                            navigation.push("UserStack", { user });
                           }}
                         >
                           <Text

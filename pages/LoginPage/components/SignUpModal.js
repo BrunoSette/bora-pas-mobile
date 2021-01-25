@@ -12,15 +12,20 @@ import { GlobalContext } from "../../../context/GlobalContext";
 import { styles } from "../index";
 import userDefaultImage from "../../../assets/images/user-default-image.png";
 import { firestore, auth, storage } from "../../../firebase/firebaseContext";
+import * as ImagePicker from 'expo-image-picker'
 
 export default function LoginModal() {
   const refContainer = useRef("");
   const [globalState, setGlobalState] = useContext(GlobalContext);
 
-    const [checking, setChecking] = useState(false);
+  const [checking, setChecking] = useState(false);
   const [errorMsg, setErrorMsg] = useState("");
-  const [imageFile, setImageFile] = useState("");
-  const [userImagePreview, setUserImagePreview] = useState(userDefaultImage);
+  const [imageFile, setImageFile] = useState(
+    require("../../../assets/images/user-default-image.png")
+  );
+  const [userImagePreview, setUserImagePreview] = useState(
+    
+  );
   const [inputFieldValues, setInputFieldValues] = useState({
     username: "",
     email: "",
@@ -64,7 +69,7 @@ export default function LoginModal() {
     auth
       .createUserWithEmailAndPassword(email, password)
       .then(() => {
-        //uploadImageFile();
+        uploadImageFile();
         createUserReferences();
 
         setGlobalState((globalState) => {
@@ -75,20 +80,28 @@ export default function LoginModal() {
         });
       })
       .catch((err) => {
-          let msg;
-          switch (err.code) {
-            case "auth/email-already-in-use":
-              msg = "Email já pertence a uma conta existente";
-              break;
-            case "auth/invalid-email":
-              msg = "Email mal formatado";
-              break;
-            case "auth/weak-password":
-              msg = "A senha deve conter no mínimo 6 caracteres";
-          }
-          setErrorMsg(msg ? msg : err.message);
-
+        let msg;
+        switch (err.code) {
+          case "auth/email-already-in-use":
+            msg = "Email já pertence a uma conta existente";
+            break;
+          case "auth/invalid-email":
+            msg = "Email mal formatado";
+            break;
+          case "auth/weak-password":
+            msg = "A senha deve conter no mínimo 6 caracteres";
+        }
+        setErrorMsg(msg ? msg : err.message);
       });
+
+      async function uploadImageFile() {
+        const response = await fetch(userImagePreview)
+        const blob = await response.blob()
+
+        storage
+          .ref(`users/${auth.currentUser.uid}/profileImage`)
+          .put(blob ? blob : defaultImageFile);
+      }
 
     function createUserReferences() {
       const { username } = inputFieldValues;
@@ -96,6 +109,7 @@ export default function LoginModal() {
         username,
         bio: "",
         points: 0,
+        pasType: 1,
         achivs: [],
         following: [],
         subjects: [],
@@ -104,18 +118,48 @@ export default function LoginModal() {
     }
   }
 
+  async function openImagePicker() {
+    const { status } = await ImagePicker.getMediaLibraryPermissionsAsync();
+
+    if (status === "granted") {
+      let result = await ImagePicker.launchImageLibraryAsync({
+        mediaTypes: ImagePicker.MediaTypeOptions.All,
+        allowsEditing: true,
+        aspect: [1, 1],
+        quality: 1,
+      });
+
+      console.log(result);
+      if (!result.cancelled) {
+        setUserImagePreview(result.uri);
+        setImageFile(result.base64);
+      }
+    }
+  }
+
   return (
     <>
       <View>
-        <Image
-          style={{
-            width: 100,
-            height: 100,
-            alignSelf: "center",
-            marginBottom: 20,
+        <TouchableOpacity
+          onPress={() => {
+            openImagePicker();
           }}
-          source={require("../../../assets/images/user-default-image.png")}
-        />
+        >
+          <Image
+            style={{
+              width: 120,
+              height: 120,
+              alignSelf: "center",
+              marginBottom: 20,
+              borderRadius: 120
+            }}
+            source={
+              userImagePreview
+                ? {uri: userImagePreview}
+                : require("../../../assets/images/user-default-image.png")
+            }
+          />
+        </TouchableOpacity>
         <TextInput
           onChangeText={(text) =>
             setInputFieldValues((values) => {
@@ -166,3 +210,28 @@ export default function LoginModal() {
     </>
   );
 }
+
+
+
+/* 
+async function openImagePicker() {
+    //const {status} = await Permissions.askAsync(Permissions.MEDIA_LIBRARY)
+
+    const { status } = await ImagePicker.getMediaLibraryPermissionsAsync();
+
+    if (status === "granted") {
+      let result = await ImagePicker.launchImageLibraryAsync({
+        mediaTypes: ImagePicker.MediaTypeOptions.All,
+        allowsEditing: true,
+        aspect: [1, 1],
+        quality: 1,
+      });
+
+      console.log(result);
+      if (!result.cancelled) {
+        setUserImagePreview(result.uri);
+        setImageFile(result.base64);
+      }
+    }
+  }
+*/

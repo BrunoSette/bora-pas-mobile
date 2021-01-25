@@ -34,11 +34,12 @@ export default function LoginModal() {
   function tryToSignUser() {
     auth
       .signInWithEmailAndPassword(email, password)
-      .then(() => {
+      .then((userCred) => {
+        console.log(userCred.additionalUserInfo.username)
         setGlobalState((globalState) => {
           return {
             ...globalState,
-            user: { ...globalState.user, isLoggedIn: true },
+            currentUser: { ...globalState.currentUser, isLoggedIn: true },
           };
         });
         console.log(globalState);

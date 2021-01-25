@@ -120,11 +120,11 @@ export default function Ranking({ route, navigation }) {
   return (
     <>
       {pageType === 'default' ? <GenericHeader text="Ranking geral:" /> : <View></View>}
-      <FlatList
+      {users.length > 0 && <FlatList
         data={users}
         renderItem={(users) => (
           <TouchableOpacity onPress={()=> {
-              navigation.navigate('UserPage', {
+              navigation.push('UserStack', {
                   user: users.item
               })
           }}>
@@ -136,9 +136,9 @@ export default function Ranking({ route, navigation }) {
           handleScrollEnd();
         }}
         onEndReachedThreshold={0}
-      ></FlatList>
+      ></FlatList>}
       {isLoadingData ? (
-        <View style={{ marginVertical: 20 }}>
+        <View style={{ marginVertical: 20, height: users.length > 0? 40 : '100%', justifyContent:  users.length > 0? 'flex-start' : 'center'}}>
           <ActivityIndicator color="rgb(45, 156, 73)" size={50 || 'large'} />
         </View>
       ) : (
