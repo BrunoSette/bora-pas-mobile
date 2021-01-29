@@ -22,7 +22,7 @@ export default function HomePage({ navigation }) {
   const [isLoadingData, setIsLoadingData] = useState(false);
   const [currentUser, setCurrentUser] = useState("");
   const [globalState, setGlobalState] = useContext(GlobalContext);
-  const uid = globalState.currentUser.uid
+  const uid = globalState.currentUser.uid;
 
   const [isLoadingRanking, setIsLoadingRanking] = useState(true);
   const [isLoadingFollowing, setIsLoadingFollowing] = useState(true);
@@ -41,14 +41,13 @@ export default function HomePage({ navigation }) {
             position++;
             let aUser = { ...user.data(), position, id: user.id };
 
-            if(aUser.hasImage) {
+            if (aUser.hasImage) {
               useGetUserImages(aUser, user.id, setUsers);
             } else {
-              setUsers(users => {
-                return [...users, aUser]
-              })
+              setUsers((users) => {
+                return [...users, aUser];
+              });
             }
-            
           });
           setIsLoadingRanking(false);
         });
@@ -75,41 +74,62 @@ export default function HomePage({ navigation }) {
             false
           );
 
-          firestore
-            .collection("users")
-            .orderBy("points", "desc")
-            .limit(10)
-            .get()
-            .then((users) => {
-              setIsLoadingData(false);
-              users.forEach((userCred) => {
-                position++;
+            const following = currentUser.following;
+            following.forEach((id) => { 
+              console.log(id);
+              firestore
+                .collection("users")
+                .doc(id)
+                .get()
+                .then((userCred) => {
+                  
+                  const user = { ...userCred.data(), id: userCred.id };
+                  console.log(user);
+                  if (user.hasImage) {
+                    getUserImages(user, userCred.id, setFollowingUsers);
+                  } else {
+                    setFollowingUsers((users) => {
+                      return [...users, user].sort((a, b) => {
+                        return b.points - a.points;
+                      });
+                    });
+                  }
+                  setIsLoadingFollowing(false);
+                })
+                .catch((err) => console.log(err));
+                setIsLoadingFollowing(false);
 
-                let user = userCred.data();
-                if (!currentUser.following.includes(userCred.id)) return;
-                let aUser = { ...user, id: userCred.id, position };
+                function getUserImages(user, id, callback) {
+                  storage
+                    .ref(`/users/${id}/profileImage`)
+                    .getDownloadURL()
+                    .then((url) => {
+                      user = { ...user, image: url };
+                        callback((users) => {
+                          const sorted = [...users, user].sort((a, b) => {
+                            return b.points - a.points;
+                          });
+                          let position = 0 
+                          return sorted.map(user => {
+                            position++
+                            return {...user, position}
+                          })
+                        });
+                    });
 
-                if(aUser.hasImage) {
-                  useGetUserImages(aUser, userCred.id, setFollowingUsers);
-                } else {
-                  setFollowingUsers((users) => {
-                    return [...users, aUser];
-                  });
+                  return null;
                 }
-                
-              });
-              setIsLoadingFollowing(false);
-            });
+            })
         });
     }
 
     getUsersWithHigherPontuations();
-    
+
     getFollowingUsers();
   }, []);
 
   useEffect(() => {
-    if(uid) checkNotificationsPermissions(uid);
+    if (uid) checkNotificationsPermissions(uid);
   }, [uid]);
 
   async function checkNotificationsPermissions(uid) {
@@ -123,17 +143,15 @@ export default function HomePage({ navigation }) {
         finalStatus = status;
       }
       const token = (await Notifications.getExpoPushTokenAsync()).data;
-      
+
       firestore.collection("users").doc(uid).set(
         {
           notificationToken: token,
         },
         { merge: true }
       );
-
-      
     } catch (err) {
-      console.log('PERMISSION_ERROR: ' + err);
+      console.log("PERMISSION_ERROR: " + err);
     }
   }
 
@@ -164,7 +182,7 @@ export default function HomePage({ navigation }) {
           </TouchableOpacity>
 
           <TouchableOpacity onPress={() => navigation.navigate("Game")}>
-            <Snippet color="green" text="Testar meus conecimentos">
+            <Snippet color="green" text="Testar meus conhecimentos">
               <Book />
             </Snippet>
           </TouchableOpacity>
