@@ -10,7 +10,7 @@ export default function User({user, big}) {
       <View style={[styles.userContainer, big && styles.big]}>
         <View style={styles["user"]}>
           <View style={styles["position"]}>
-            <Text style={{ color: "white", textAlign: "center" }}>
+            <Text style={{ color: "white", textAlign: "center", fontSize: 12 }}>
               {user.privateInfo ? "?" : user.position}
             </Text>
           </View>
@@ -21,7 +21,7 @@ export default function User({user, big}) {
               borderRadius: big ? bigSize : defaultSize,
               marginRight: 10,
             }}
-            source={{ uri: user.image }}
+            source={user.hasImage? { uri: user.image } : require('../assets/images/user-default-image.png')}
           />
           <View>
             <Text style={{ fontWeight: "bold", fontSize: big? 20 : 15 }}>{user.username}</Text>
@@ -54,8 +54,8 @@ const styles = StyleSheet.create({
   position: {
     backgroundColor: 'green',
     padding: 0,
-    width: 20,
-    height: 20,
+    width: 22,
+    height: 22,
     borderRadius: 10,
     transform: [
       {translateX: 6},

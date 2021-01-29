@@ -1,17 +1,20 @@
 import React, { useContext, useState, useEffect } from "react";
 import { View, Text, Image, StyleSheet } from "react-native";
-import { ScrollView, TextInput, TouchableOpacity } from "react-native-gesture-handler";
+import {
+  ScrollView,
+  TextInput,
+  TouchableOpacity,
+} from "react-native-gesture-handler";
 import { GlobalContext } from "../../context/GlobalContext";
 import Button1 from "../../shered-components/Button1";
 import ImageFilter from "react-native-image-filter";
-import { firestore } from "../../firebase/firebaseContext";
+import { auth, firestore, functions } from "../../firebase/firebaseContext";
 import { useGetUserImages } from "../../hooks&functions/useGetUserImages";
 import convertSubjectNameToUTF8 from "../../context/convertSubjectNameToUTF8";
 import { Checkbox } from "react-native-paper";
 
 export default function UserPage({ route, navigation }) {
   const { user } = route.params;
-  //console.log(user.username)
   const [globalState, setGlobalState] = useContext(GlobalContext);
   const [isLoading, setIsLoading] = useState(false);
   const [uid, setUid] = useState(user.id);
@@ -26,7 +29,6 @@ export default function UserPage({ route, navigation }) {
     currentUser.privateInfo
   );
 
-
   const [currentUsername, setCurrentUsername] = useState(user.username);
   const [currentBio, setCurrentBio] = useState(user.bio);
 
@@ -36,18 +38,16 @@ export default function UserPage({ route, navigation }) {
   //Estados no caso do usuário estar na página de outro perfil:
   const [isBeeigFollowed, setIsBeingFollowed] = useState(false);
   const [currentUserFollowing, setCurrentUserFollowing] = useState([]);
-
-    useEffect(()=> {
-        console.log(currentUsername)
-    }, [currentUsername])
+  
 
   useEffect(() => {
+    if(!currentUser.username) return
     function checkFollowing() {
       if (currentUser.following.includes(user.id)) setIsBeingFollowed(true);
       else setIsBeingFollowed(false);
     }
     checkFollowing();
-  }, []);
+  }, [currentUser]);
 
   useEffect(() => {
     function getFollowingUsers() {
@@ -62,16 +62,23 @@ export default function UserPage({ route, navigation }) {
               ...userCred.data(),
               id: userCred.id,
             };
-            useGetUserImages(user, userCred.id, setIsFollowing, false);
+            if(user.hasImage) {
+                useGetUserImages(user, userCred.id, setIsFollowing, false);
+            } else {
+                setIsFollowing(users => {
+                    return [...users, user]
+                })
+            }
+            
           });
       });
     }
     getFollowingUsers();
-    
   }, []);
 
   useEffect(() => {
-    if (globalState.currentUser.uid === user.id) setIsCurrentUserPage(true);
+    if(!currentUser.username) setIsCurrentUserPage(false)
+     else if (globalState.currentUser.uid === user.id) setIsCurrentUserPage(true);
   }, [globalState, user]);
 
   function handlePress() {
@@ -116,6 +123,20 @@ export default function UserPage({ route, navigation }) {
         update = [...currentUser.following, user.id];
         submitFollowingUpdate(update);
         setIsBeingFollowed(true);
+
+          const sendPush = functions.httpsCallable("sendPush");
+          sendPush({
+            msg: {
+              to: user.notificationToken || false,
+              title: `${currentUser.username} está agora te seguindo`,
+              body: `Veja`,
+              sound: "default",
+              time: Date.now(),
+            },
+            destinationUid: user.id,
+            senderUid: currentUser.uid,
+          });
+        
       }
 
       function submitFollowingUpdate(update) {
@@ -134,6 +155,14 @@ export default function UserPage({ route, navigation }) {
     }
   }
 
+  function handleSignOut() {
+    auth.signOut().then(() => {
+      setGlobalState((state) => {
+        return { ...state, currentUser: { ...state.currentUser, isLoggedIn: false } };
+      });
+    });
+  }
+
   function handleCheck() {
     const checked = checkPrivateInfoCheckbox;
 
@@ -141,26 +170,24 @@ export default function UserPage({ route, navigation }) {
       ? setCheckPrivateInfoCheckbox(false)
       : setCheckPrivateInfoCheckbox(true);
 
-      function updatePrivateInfo() {
-          setGlobalState((state) => {
-            return {
-              ...state,
-              currentUser: {
-                ...state.currentUser,
-                privateInfo: checked ? false : true,
-              },
-            };
-          });
+    function updatePrivateInfo() {
+      setGlobalState((state) => {
+        return {
+          ...state,
+          currentUser: {
+            ...state.currentUser,
+            privateInfo: checked ? false : true,
+          },
+        };
+      });
 
-          firestore
-            .collection("users")
-            .doc(uid)
-            .update({ privateInfo: checked ? false : true });
+      firestore
+        .collection("users")
+        .doc(uid)
+        .update({ privateInfo: checked ? false : true });
+    }
 
-        
-      }
-
-      updatePrivateInfo()
+    updatePrivateInfo();
   }
 
   function getSubjects() {
@@ -180,7 +207,11 @@ export default function UserPage({ route, navigation }) {
         <View style={styles["mainInfoContainer"]}>
           <Image
             style={{ width: 110, height: 110, borderRadius: 110, zIndex: -100 }}
-            source={{ uri: user.image }}
+            source={
+              user.hasImage
+                ? { uri: user.image }
+                : require("../../assets/images/user-default-image.png")
+            }
           />
 
           {!editMode ? (
@@ -205,7 +236,7 @@ export default function UserPage({ route, navigation }) {
           ) : (
             <TextInput
               onChangeText={(text) => {
-                setUsernameInputValue(text);
+                setBioInputValue(text);
               }}
               style={styles["input"]}
               value={bioInputValue}
@@ -252,7 +283,7 @@ export default function UserPage({ route, navigation }) {
               Pontos: {user.points}
             </Text>
 
-            {user.following.length ? (
+            {user.following && user.following.length ? (
               <Text style={styles["section"]}>
                 Segue:{" "}
                 <Text>
@@ -277,12 +308,14 @@ export default function UserPage({ route, navigation }) {
                     })}
                 </Text>
                 {(isFollowing && isFollowing.length) > 2 ? (
-                  <TouchableOpacity onPress={()=> {
+                  <TouchableOpacity
+                    onPress={() => {
                       navigation.navigate("RankingStack", {
                         uid: user.id,
                         pageType: "generalFollowing",
                       });
-                  }}>
+                    }}
+                  >
                     <Text style={{ color: "rgb(45, 156, 73)", fontSize: 16 }}>
                       mais...
                     </Text>
@@ -297,7 +330,7 @@ export default function UserPage({ route, navigation }) {
 
             <Text style={styles["section"]}>
               Se da melhor em:{" "}
-              <Text style={{ fontWeight: "noraml" }}>
+              <Text style={{ fontWeight: "normal" }}>
                 {user.subjects.length
                   ? getSubjects(user.subjects) || "sem dados o suficiente"
                   : "sem dados o sufiiente"}
@@ -316,6 +349,23 @@ export default function UserPage({ route, navigation }) {
           <Text>Informações privadas</Text>
         )}
       </View>
+      {isCurrentUserPage ? (
+        <TouchableOpacity onPress={()=> {
+            handleSignOut()
+        }}>
+          <Text
+            style={{
+              textAlign: "center",
+              marginVertical: 20,
+              color: "rgb(170, 16, 16)",
+            }}
+          >
+            Sair
+          </Text>
+        </TouchableOpacity>
+      ) : (
+        <View />
+      )}
     </ScrollView>
   );
 }

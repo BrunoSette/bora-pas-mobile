@@ -6,6 +6,7 @@ import { auth, firestore, storage } from "../firebase/firebaseContext";
 import User from "./User";
 import { Image, Text, TextInput, View, StyleSheet, TouchableOpacity, StatusBar } from "react-native";
 import { useNavigation } from "@react-navigation/native";
+import MaterialIcons from "react-native-vector-icons/MaterialIcons";
 
 export default function Header() {
   const navigation = useNavigation()
@@ -40,7 +41,7 @@ export default function Header() {
 
         setUid(auth.currentUser.uid);
       } else {
-        if (typeof window !== "undefined") window.location.href = "/";
+        //if (typeof window !== "undefined") window.location.href = "/";
       }
     });
   }, [uid]);
@@ -48,7 +49,6 @@ export default function Header() {
 
 
   useEffect(() => {
-      console.log(uid)
       if(!uid) return
     function getUsername() {
       try {
@@ -94,7 +94,6 @@ export default function Header() {
   }, [endAnimation]);
 
     useEffect(() => {
-      console.log("USER  IMAGE: " + userImage);
     }, [userImage]);
 
 
@@ -136,6 +135,42 @@ export default function Header() {
 
   function handlePressSearch() {
       setSearchMode(true)
+  }
+
+  async function handleSearch() {
+    const data = await firestore
+      .collection("users")
+      .where("username", "==", searchInputValue)
+      .get();
+
+    if (data.empty) {
+      setQueryReturnEmptyResults(true);
+      return;
+    }
+
+    data.forEach((doc) => {
+      const user = { ...doc.data(), id: doc.id };
+      getUserImages(user, doc.id, setResults);
+    });
+
+    function getUserImages(user, id, callback) {
+      storage
+        .ref(`/users/${id}/profileImage`)
+        .getDownloadURL()
+        .then((url) => {
+          user = { ...user, image: url };
+
+          callback((users) => {
+            return [...users, user]
+              .sort((a, b) => {
+                return b.points - a.points;
+              })
+              .filter((user) => {
+                return user.points !== 0;
+              });
+          });
+        });
+    }
   }
 
   if (!searchMode) {
@@ -190,10 +225,13 @@ export default function Header() {
           }
         >
           <TextInput
-            onChangeText={(e) => {
-              setSearchInputValue(e.target.value);
+            onChangeText={(text) => {
+              setSearchInputValue(text);
               setResults([]);
               setQueryReturnEmptyResults(false);
+            }}
+            onSubmitEditing={()=> {
+              handleSearch()
             }}
             value={searchInputValue}
             placeholder="Buscar usuário..."
@@ -202,9 +240,12 @@ export default function Header() {
           />
 
           <View style={{ flex: 0, marginRight: 10 }}>
-            <Text onPress={()=> {
+            <TouchableOpacity onPress={()=> {
               setSearchMode(false)
-            }}>X</Text>
+            }}>
+                <MaterialIcons name="close" color="black" size={30} />
+            </TouchableOpacity>
+            
             {/*<img onClick={handleSearch} src={searchIcon} alt="buscar" />
             <img
               onClick={() => {
@@ -222,16 +263,21 @@ export default function Header() {
 
         {(results.length !== 0 || queryReturnEmptyResults) && (
           <View
-            onTouchStart={() => {
-              setSearchMode(false);
-            }}
+          style={{position: 'absolute', top: 100, zIndex: 2, backgroundColor: 'white', width: '100%', paddingVertical: 10, borderTopColor: 'rgb(220, 220, 220)', borderTopWidth: 2, borderBottomLeftRadius: 20, borderBottomRightRadius: 20, elevation: 10}}
+            
           >
             {!queryReturnEmptyResults ? (
               results.map((user) => {
-                return <User user={user} />;
+                return (
+                  <TouchableOpacity onPress={()=> {
+                    navigation.navigate('UserStack', {user})
+                  }}>
+                    <User user={user} />
+                  </TouchableOpacity>
+                );
               })
             ) : (
-              <Text>
+              <Text style={{textAlign: 'center', color: 'grey', fontSize: 14}}>
                 Nenhum resultado... (verifique se digitou o nome do usuário
                 corretamente)
               </Text>

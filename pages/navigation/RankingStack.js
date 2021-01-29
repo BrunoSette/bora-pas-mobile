@@ -9,7 +9,6 @@ const RankingPageStack = createStackNavigator();
 
 export default function RankingStack({route, navigation}) {
     const {pageType, uid} = route.params
-    console.log('UID FROM Stack: ' + uid)
   return (
     <RankingPageStack.Navigator>
       <RankingPageStack.Screen

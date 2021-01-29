@@ -1,7 +1,6 @@
 import React, { useContext, useEffect, useState } from 'react'
 import { View, Text, StyleSheet } from 'react-native'
 import { ScrollView, TouchableOpacity } from 'react-native-gesture-handler';
-import { Searchbar } from 'react-native-paper';
 import { GlobalContext } from '../../context/GlobalContext';
 import { firestore } from '../../firebase/firebaseContext';
 import GenericHeader from '../../shered-components/GenericHeader';
@@ -13,10 +12,6 @@ export default function GameMenu({navigation}) {
     const [pasType, setPasType] = useState("");
     const {currentUser} = globalState
     const [areas, setAreas] = useState([])
-
-    useEffect(()=> {
-        console.log(areas)
-    }, [areas])
 
     useEffect(()=> {
         let areas = [];
@@ -43,7 +38,6 @@ export default function GameMenu({navigation}) {
           };
         });
 
-        console.log(formatedAreas)
         setAreas(formatedAreas)
     }, [])
 
@@ -134,7 +128,12 @@ export default function GameMenu({navigation}) {
               </TouchableOpacity>
             </View>
 
-            <TouchableOpacity>
+            <TouchableOpacity
+              style={{ paddingBottom: 5 }}
+              onPress={() => {
+                navigation.navigate("GamePage", { subject: 'Geral' });
+              }}
+            >
               <Snippet
                 width={"100%"}
                 size="big"
@@ -142,9 +141,7 @@ export default function GameMenu({navigation}) {
                 textSize={55}
                 color="green"
                 text="Geral"
-              >
-                <Text></Text>
-              </Snippet>
+              ></Snippet>
             </TouchableOpacity>
 
             <View>
@@ -161,9 +158,12 @@ export default function GameMenu({navigation}) {
                       {area.areaName}:
                     </Text>
                     {area.subjects.map((subject) => (
-                      <TouchableOpacity style={{paddingBottom: 5}} onPress={()=> {
-                          navigation.navigate('GamePage', {subject})
-                      }}>
+                      <TouchableOpacity
+                        style={{ paddingBottom: 5 }}
+                        onPress={() => {
+                          navigation.navigate("GamePage", { subject });
+                        }}
+                      >
                         <Snippet
                           width={"100%"}
                           align="center"

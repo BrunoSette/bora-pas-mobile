@@ -21,7 +21,7 @@ export default function LoginModal() {
   const [checking, setChecking] = useState(false);
   const [errorMsg, setErrorMsg] = useState("");
   const [imageFile, setImageFile] = useState(
-    require("../../../assets/images/user-default-image.png")
+    "../../../assets/images/user-default-image.png"
   );
   const [userImagePreview, setUserImagePreview] = useState(
     
@@ -80,27 +80,35 @@ export default function LoginModal() {
         });
       })
       .catch((err) => {
-        let msg;
-        switch (err.code) {
-          case "auth/email-already-in-use":
-            msg = "Email já pertence a uma conta existente";
-            break;
-          case "auth/invalid-email":
-            msg = "Email mal formatado";
-            break;
-          case "auth/weak-password":
-            msg = "A senha deve conter no mínimo 6 caracteres";
-        }
-        setErrorMsg(msg ? msg : err.message);
+        setTimeout(() => {
+          let msg;
+          switch (err.code) {
+            case "auth/email-already-in-use":
+              msg = "Email já pertence a uma conta existente";
+              break;
+            case "auth/invalid-email":
+              msg = "Email mal formatado";
+              break;
+            case "auth/weak-password":
+              msg = "A senha deve conter no mínimo 6 caracteres";
+          }
+          setErrorMsg(msg ? msg : err.message);
+        }, 1000);
       });
 
       async function uploadImageFile() {
-        const response = await fetch(userImagePreview)
-        const blob = await response.blob()
+        if(userImagePreview) {
+          const response = await fetch(userImagePreview);
+          const blob = await response.blob();
 
-        storage
-          .ref(`users/${auth.currentUser.uid}/profileImage`)
-          .put(blob ? blob : defaultImageFile);
+          storage
+            .ref(`users/${auth.currentUser.uid}/profileImage`)
+            .put(blob)
+            .then((output) => console.log("OUTPUT STATE: " + output.state));
+        } else {
+          
+        }
+        
       }
 
     function createUserReferences() {
@@ -113,27 +121,37 @@ export default function LoginModal() {
         achivs: [],
         following: [],
         subjects: [],
+        notifications: [],
+        pendingNotifications: false,
         privateInfo: false,
+        hasImage: userImagePreview? true : false
       });
     }
   }
 
   async function openImagePicker() {
+    console.log('try to open picker')
     const { status } = await ImagePicker.getMediaLibraryPermissionsAsync();
+    const errerMsg = 'Não foi possível acessar suas fotos'
 
-    if (status === "granted") {
-      let result = await ImagePicker.launchImageLibraryAsync({
+    if (status === "granted" || status === 'undetermined') {
+      let result;
+      try {result = await ImagePicker.launchImageLibraryAsync({
         mediaTypes: ImagePicker.MediaTypeOptions.All,
         allowsEditing: true,
         aspect: [1, 1],
         quality: 1,
-      });
-
-      console.log(result);
-      if (!result.cancelled) {
-        setUserImagePreview(result.uri);
-        setImageFile(result.base64);
+      });}
+      catch(err) {
+        console.log(err)
+        setErrorMsg(errorMsg)
       }
+
+      if (!result.cancelled) setUserImagePreview(result.uri);
+
+    } else {
+      ImagePicker.getMediaLibraryPermissionsAsync();
+      setErrorMsg(errorMsg)
     }
   }
 
@@ -210,28 +228,3 @@ export default function LoginModal() {
     </>
   );
 }
-
-
-
-/* 
-async function openImagePicker() {
-    //const {status} = await Permissions.askAsync(Permissions.MEDIA_LIBRARY)
-
-    const { status } = await ImagePicker.getMediaLibraryPermissionsAsync();
-
-    if (status === "granted") {
-      let result = await ImagePicker.launchImageLibraryAsync({
-        mediaTypes: ImagePicker.MediaTypeOptions.All,
-        allowsEditing: true,
-        aspect: [1, 1],
-        quality: 1,
-      });
-
-      console.log(result);
-      if (!result.cancelled) {
-        setUserImagePreview(result.uri);
-        setImageFile(result.base64);
-      }
-    }
-  }
-*/

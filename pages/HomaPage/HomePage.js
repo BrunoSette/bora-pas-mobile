@@ -7,9 +7,9 @@ import User from "../../shered-components/User";
 import { useGetUserImages } from "../../hooks&functions/useGetUserImages";
 import { ScrollView, TouchableOpacity } from "react-native-gesture-handler";
 import Book from "../../assets/svgs/book";
-import { CommonActions } from "@react-navigation/native";
 import { useNavigation } from "@react-navigation/native";
 import { GlobalContext } from "../../context/GlobalContext";
+import * as Notifications from "expo-notifications";
 //import SimpleBar from "simplebar-react";
 //import Simplebar from 'simplebar'
 //import "simplebar/dist/simplebar.min.css";
@@ -22,9 +22,10 @@ export default function HomePage({ navigation }) {
   const [isLoadingData, setIsLoadingData] = useState(false);
   const [currentUser, setCurrentUser] = useState("");
   const [globalState, setGlobalState] = useContext(GlobalContext);
+  const uid = globalState.currentUser.uid
 
-  const [isLoadingRanking, setIsLoadingRanking] = useState(true)
-  const [isLoadingFollowing, setIsLoadingFollowing] = useState(true)
+  const [isLoadingRanking, setIsLoadingRanking] = useState(true);
+  const [isLoadingFollowing, setIsLoadingFollowing] = useState(true);
 
   useEffect(() => {
     function getUsersWithHigherPontuations() {
@@ -40,9 +41,16 @@ export default function HomePage({ navigation }) {
             position++;
             let aUser = { ...user.data(), position, id: user.id };
 
-            useGetUserImages(aUser, user.id, setUsers);
+            if(aUser.hasImage) {
+              useGetUserImages(aUser, user.id, setUsers);
+            } else {
+              setUsers(users => {
+                return [...users, aUser]
+              })
+            }
+            
           });
-          setIsLoadingRanking(false)
+          setIsLoadingRanking(false);
         });
     }
 
@@ -81,23 +89,59 @@ export default function HomePage({ navigation }) {
                 if (!currentUser.following.includes(userCred.id)) return;
                 let aUser = { ...user, id: userCred.id, position };
 
-                useGetUserImages(aUser, userCred.id, setFollowingUsers);
+                if(aUser.hasImage) {
+                  useGetUserImages(aUser, userCred.id, setFollowingUsers);
+                } else {
+                  setFollowingUsers((users) => {
+                    return [...users, aUser];
+                  });
+                }
                 
               });
+              setIsLoadingFollowing(false);
             });
-            setIsLoadingFollowing(false);
         });
     }
 
     getUsersWithHigherPontuations();
+    
     getFollowingUsers();
   }, []);
+
+  useEffect(() => {
+    if(uid) checkNotificationsPermissions(uid);
+  }, [uid]);
+
+  async function checkNotificationsPermissions(uid) {
+    try {
+      const {
+        status: existingStatus,
+      } = await Notifications.getPermissionsAsync();
+      let finalStatus = existingStatus;
+      if (existingStatus !== "granted") {
+        const { status } = await Notifications.requestPermissionsAsync();
+        finalStatus = status;
+      }
+      const token = (await Notifications.getExpoPushTokenAsync()).data;
+      
+      firestore.collection("users").doc(uid).set(
+        {
+          notificationToken: token,
+        },
+        { merge: true }
+      );
+
+      
+    } catch (err) {
+      console.log('PERMISSION_ERROR: ' + err);
+    }
+  }
 
   return (
     <>
       <Header />
       <View>
-        <ScrollView style={{ marginBottom: 100 }} scrollEnabled={true}>
+        <ScrollView style={{ marginBottom: 100 }}>
           <TouchableOpacity
             style={{ height: 103 }}
             onPress={() => {
@@ -125,8 +169,7 @@ export default function HomePage({ navigation }) {
             </Snippet>
           </TouchableOpacity>
 
-          <Snippet size="big">
-            
+          <Snippet noPaddingBottom={true} size="big">
             {!isLoadingRanking ? (
               <ScrollView style={{ paddingHorizontal: 8, paddingTop: 5 }}>
                 <Text style={{ fontWeight: "bold", fontSize: 22 }}>
@@ -135,6 +178,7 @@ export default function HomePage({ navigation }) {
                 {users.map((user) => {
                   return (
                     <TouchableOpacity
+                      key={user.id}
                       onPress={() => {
                         navigation.navigate("UserStack", {
                           user,
@@ -164,29 +208,44 @@ export default function HomePage({ navigation }) {
             )}
           </Snippet>
 
-          <Snippet size="big">
-            {!isLoadingFollowing ? !followingUsers.length === 0? (
-              <ScrollView style={{ paddingHorizontal: 8, paddingTop: 0 }}>
-                <Text style={{ fontWeight: "bold", fontSize: 22 }}>
-                  Você segue:
-                </Text>
-                {followingUsers.map((user) => {
-                  return (
-                    <TouchableOpacity
-                      onPress={() => {
-                        navigation.navigate("UserStack", {
-                          user,
-                        });
-                      }}
-                    >
-                      <User user={user}></User>
-                    </TouchableOpacity>
-                  );
-                })}
-              </ScrollView>
-            ) : <View style={{width: '100%', alignItems: 'center'}}>
-              <Text style={{textAlign: 'center', width: '80%' , fontSize: 20, fontWeight: 'bold', color: 'grey'}}>Você ainda não segue ninguém</Text>
-            </View> : (
+          <Snippet marginBottom={500} noPaddingBottom={true} size="big">
+            {!isLoadingFollowing ? (
+              followingUsers.length > 0 ? (
+                <ScrollView style={{ paddingHorizontal: 8, paddingTop: 0 }}>
+                  <Text style={{ fontWeight: "bold", fontSize: 22 }}>
+                    Você segue:
+                  </Text>
+                  {followingUsers.map((user) => {
+                    return (
+                      <TouchableOpacity
+                        key={user.id}
+                        onPress={() => {
+                          navigation.navigate("UserStack", {
+                            user,
+                          });
+                        }}
+                      >
+                        <User user={user}></User>
+                      </TouchableOpacity>
+                    );
+                  })}
+                </ScrollView>
+              ) : (
+                <View style={{ width: "100%", alignItems: "center" }}>
+                  <Text
+                    style={{
+                      textAlign: "center",
+                      width: "80%",
+                      fontSize: 20,
+                      fontWeight: "bold",
+                      color: "grey",
+                    }}
+                  >
+                    Você ainda não segue ninguém
+                  </Text>
+                </View>
+              )
+            ) : (
               <View
                 style={{
                   alignSelf: "center",

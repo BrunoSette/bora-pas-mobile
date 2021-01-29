@@ -9,7 +9,6 @@ const RankingPageStack = createStackNavigator();
 
 export default function UserStack({route, navigation}) {
     const {user} = route.params
-    const headerTitleForUserFollowingPage = {...user, username: `${user.username} segue:`}
   return (
     <RankingPageStack.Navigator>
       <RankingPageStack.Screen

@@ -1,6 +1,6 @@
 {
   "expo": {
-    "name": "bora-pas-mobile",
+    "name": "BORA PAS",
     "slug": "bora-pas-mobile",
     "version": "1.0.0",
     "orientation": "portrait",
@@ -8,22 +8,29 @@
     "splash": {
       "image": "./assets/splash.png",
       "resizeMode": "contain",
-      "backgroundColor": "#ffffff"
+      "backgroundColor": "#f2f2f2"
     },
+    "description": "O Bora Pas é uma plataforma dinâmica de estudos focada no Programa de Avaliação Seriada da UNB (PAS)",
+    "privacy": "public",
+    "githubUrl": "https://github.com/Vitoudi/bora-pas-mobile",
+    "primaryColor": "#2d9c49",
+    
     "updates": {
       "fallbackToCacheTimeout": 0
     },
-    "assetBundlePatterns": [
-      "**/*"
-    ],
+    "assetBundlePatterns": ["**/*"],
     "ios": {
-      "supportsTablet": true
+      "supportsTablet": false,
+      "bundleIdentifier": "com.vitoudi.borapas",
+      "buildNumber": "1.0.0"
     },
     "android": {
       "adaptiveIcon": {
         "foregroundImage": "./assets/adaptive-icon.png",
         "backgroundColor": "#FFFFFF"
-      }
+      },
+      "package": "com.vitoudi.borapas",
+      "versionCode": 1
     },
     "web": {
       "favicon": "./assets/favicon.png"

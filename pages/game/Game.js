@@ -1,12 +1,12 @@
-import React, { useContext, useState } from "react";
+import React, { useContext, useState, useEffect } from "react";
 import { View, Text, ActivityIndicator, Image } from "react-native";
 import { ScrollView, TouchableOpacity } from "react-native-gesture-handler";
 import { Animated } from "react-native";
-import { useEffect } from "react/cjs/react.development";
 import convertSubjectNameToUTF8 from "../../context/convertSubjectNameToUTF8";
 import { GlobalContext } from "../../context/GlobalContext";
 import { firestore, storage } from "../../firebase/firebaseContext";
 import Button1 from "../../shered-components/Button1";
+import checkAchivs from "../../hooks&functions/checkAchivs";
 
 export default function Game({ route, navigation }) {
   let { subject } = route.params;
@@ -25,7 +25,7 @@ export default function Game({ route, navigation }) {
   const [currentQuestion, setCurrentQuestion] = useState(
     questions && currentIndex ? questions[currentIndex] : ""
   );
-  const [questionImage, setQuestionImage] = useState('')
+  const [questionImage, setQuestionImage] = useState("");
   const [gameIsRunning, setGameIsRunning] = useState(false);
   const [pointsInThisGame, setPointsInThisGame] = useState(0);
   const [numberOfCorrectAnswers, setNumberOfCorrectAnswers] = useState(0);
@@ -66,7 +66,6 @@ export default function Game({ route, navigation }) {
 
   useEffect(() => {
     function createArrayOfRandomNumbers() {
-      console.log("num of questions: " + numberOfQuestions);
       for (let i = 1; i <= numberOfQuestions; i++) {
         randomNumbersArray.push(i);
       }
@@ -75,9 +74,7 @@ export default function Game({ route, navigation }) {
     createArrayOfRandomNumbers();
 
     if (gameHasStarted) {
-      
       fetchQuestions().then(() => {
-        console.log("questions fetch");
         setIsLoading(false);
         startGameTime();
       });
@@ -91,12 +88,11 @@ export default function Game({ route, navigation }) {
         return;
       }
       if (questions[currentIndex].hasImage) {
-          setCurrentQuestion(questions[currentIndex]);
+        setCurrentQuestion(questions[currentIndex]);
         storage
           .ref(`/questions/${questions[currentIndex].id}/questionImage`)
           .getDownloadURL()
           .then((url) => {
-            console.log("URL: " + url);
             setQuestionImage(url);
           });
       } else {
@@ -109,7 +105,7 @@ export default function Game({ route, navigation }) {
     if (!gameHasStarted) return;
 
     const gameInfo = {
-      user: currentUser.uid,
+      uid: currentUser.uid,
       subject: rawSubject,
       pointsInThisGame,
       numberOfCorrectAnswers,
@@ -119,47 +115,44 @@ export default function Game({ route, navigation }) {
       userSubjects: currentUser.subjects,
     };
 
-    //setNewAchiv(checkAchivs(gameInfo));
+    setNewAchiv(checkAchivs(gameInfo));
 
-    function updateUserInfo() {
-        firestore
-          .collection("users")
-          .doc(currentUser.uid)
-          .update({ points: currentUser.points + pointsInThisGame });
+    function updateUserInfo() { 
+      firestore
+        .collection("users")
+        .doc(currentUser.uid)
+        .update({ points: currentUser.points + pointsInThisGame });
 
-        setGlobalState(state => {
-            return {
-              ...state,
-              currentUser: {
-                ...state.currentUser,
-                points: currentUser.points + pointsInThisGame,
-              },
-            };
-        })
+      setGlobalState((state) => {
+        return {
+          ...state,
+          currentUser: {
+            ...state.currentUser,
+            points: currentUser.points + pointsInThisGame,
+          },
+        };
+      });
     }
-    
 
-    updateUserInfo()
+    updateUserInfo();
     clearTimeout(gameTime);
     setGameTime(null);
   }, [gameHasEnded]);
 
   useEffect(() => {
-    console.log(currentQuestion);
     if ((!currentQuestion || !currentQuestion.id) && currentIndex)
       setGameHasEnded(true);
   }, [currentQuestion]);
 
-  useEffect(()=> {
-      questionOutAnimationValue.setValue(0)
-    if(isTransitionHappening) {
-        animate(questionOutAnimationValue, 100, 600);
-        animateWithIteration(turnResultAnimationValue, 0, 1.3, 600)
+  useEffect(() => {
+    questionOutAnimationValue.setValue(0);
+    if (isTransitionHappening) {
+      animate(questionOutAnimationValue, 100, 600);
+      animateWithIteration(turnResultAnimationValue, 0, 1.3, 600);
     }
-  }, [isTransitionHappening])
+  }, [isTransitionHappening]);
 
   async function fetchQuestions() {
-    console.log(randomNumbersArray);
     if (randomNumbersArray.length === 0) return;
 
     for (let i = 0; i < MAX_NUMBER_OF_QUESTIONS; i++) {
@@ -239,7 +232,7 @@ export default function Game({ route, navigation }) {
 
     if (gameTime === null || questions.length !== 0) {
       setGameIsRunning(true);
-      timingBarAnimationValue.setValue(0)
+      timingBarAnimationValue.setValue(0);
       animate(timingBarAnimationValue, 100, 2 * 60 * 1000);
       setGameTime(
         setTimeout(() => {
@@ -306,37 +299,71 @@ export default function Game({ route, navigation }) {
     }).start();
   }
 
-  function animateWithIteration(value, firstTimeValue, secondTimeValue, totalDuration) {
-      Animated.loop(
-        Animated.sequence([
-          Animated.timing(value, {
-            toValue: secondTimeValue,
-            duration: (totalDuration * 2) / 3 + 20,
-            useNativeDriver: false,
-            //easing: Easing.linear()
-          }),
-          Animated.timing(value, {
-            toValue: firstTimeValue,
-            duration: (totalDuration * 1) / 3 + 20,
-            useNativeDriver: false,
-            //easing: Easing.linear()
-          }),
-        ])
-      ).start();
+  function animateWithIteration(
+    value,
+    firstTimeValue,
+    secondTimeValue,
+    totalDuration
+  ) {
+    Animated.loop(
+      Animated.sequence([
+        Animated.timing(value, {
+          toValue: secondTimeValue,
+          duration: (totalDuration * 2) / 3 + 20,
+          useNativeDriver: false,
+          //easing: Easing.linear()
+        }),
+        Animated.timing(value, {
+          toValue: firstTimeValue,
+          duration: (totalDuration * 1) / 3 + 20,
+          useNativeDriver: false,
+          //easing: Easing.linear()
+        }),
+      ])
+    ).start();
   }
 
-  if(gameHasEnded) {
-      return (
-        <View
-          style={{
-            alignItems: "center",
-            justifyContent: "center",
-            height: "100%",
-          }}
-        >
-          <Text style={{fontWeight: 'bold', fontSize: 20}}>Pontuação obtida: {pointsInThisGame} </Text>
-        </View>
-      );
+  if (gameHasEnded) {
+    return (
+      <View
+        style={{
+          alignItems: "center",
+          justifyContent: "center",
+          height: "100%",
+        }}
+      >
+        <Text style={{ fontWeight: "bold", fontSize: 20 }}>
+          Pontuação obtida: {pointsInThisGame}{" "}
+        </Text>
+        {newAchiv ? (
+          <View
+            style={{
+              padding: 10,
+              backgroundColor: "rgb(45, 156, 73)",
+              borderRadius: 5,
+              marginTop: 10,
+            }}
+          >
+            <Text
+              style={{
+                color: "white",
+                textAlign: "center",
+                fontWeight: "bold",
+              }}
+            >
+              Nova conquista: <Text>{newAchiv[0]}</Text>
+            </Text>
+          </View>
+        ) : (
+          <View />
+        )}
+        <TouchableOpacity onPress={()=> {
+          navigation.goBack()
+        }}>
+          <Button1 color="default" text="Voltar" />
+        </TouchableOpacity>
+      </View>
+    );
   }
 
   if (isLoading) {
@@ -380,33 +407,31 @@ export default function Game({ route, navigation }) {
 
         <TouchableOpacity
           onPress={() => {
-              setIsLoading(true);
+            setIsLoading(true);
             setGameHasStarted(true);
           }}
         >
-          
-            <View
+          <View
+            style={{
+              color: "white",
+              textAlign: "center",
+              backgroundColor: "rgb(45, 156, 73)",
+              width: "100%",
+              padding: 10,
+              alignItems: "center",
+              marginVertical: 15,
+              borderRadius: 10,
+            }}
+          >
+            <Text
               style={{
                 color: "white",
                 textAlign: "center",
-                backgroundColor: "rgb(45, 156, 73)",
-                width: "100%",
-                padding: 10,
-                alignItems: "center",
-                marginVertical: 15,
-                borderRadius: 10,
               }}
             >
-              <Text
-                style={{
-                  color: "white",
-                  textAlign: "center",
-                }}
-              >
-                Começar
-              </Text>
-            </View>
-
+              Começar
+            </Text>
+          </View>
         </TouchableOpacity>
       </View>
     );
@@ -662,7 +687,5 @@ export default function Game({ route, navigation }) {
     );
   }
 
-  return <Text></Text>
-  }
-
-  
+  return <Text></Text>;
+}

@@ -30,12 +30,8 @@ export default function Ranking({ route, navigation }) {
     } else if (pageType === "currentUserFollowing") {
       setIsCurrentUserFollowingPage(true);
     } else if (pageType === "generalFollowing") {
-        console.log('gerneral following page')
       setIsFollowinPage(true);
       loadFollowingUsers()
-      console.log('UID: '+ uid)
-    } else {
-        console.log('none')
     }
   }, []);
 
@@ -56,17 +52,40 @@ export default function Ranking({ route, navigation }) {
       setIsDataEmpty(true);
     }
 
-    data.forEach((user) => {
+    data.forEach((userCred) => {
+      if(isInArray(userCred, users, 'id')) return
+      
+
       position++;
       setGlobalPosition(position);
-      let aUser = { ...user.data(), position, id: user.id };
+      let aUser = { ...userCred.data(), position, id: userCred.id };
 
-      useGetUserImages(aUser, user.id, setUsers);
+      if(aUser.hasImage) {
+        if (isInArray(aUser, users, "position")) return;
+        useGetUserImages(aUser, userCred.id, setUsers);
+      } else {
+        if (isInArray(aUser, users, "position")) return;
+          setUsers(users => {
+            
+              return [...users, aUser]
+          })
+      }
+      
     });
 
     setIsLoadingData(false);
     setLastFetchUser(data.docs[data.docs.length - 1]);
   }
+
+  useEffect(()=> {
+    let seen = new Set();
+    let hasDuplicates = users.some((currentObject) => {
+      return seen.size === seen.add(currentObject.id).size;
+    });
+
+    if(hasDuplicates) removeDuplicate()
+    else return
+  }, [users])
 
   async function loadFollowingUsers() {
     setIsLoadingData(true);
@@ -75,14 +94,12 @@ export default function Ranking({ route, navigation }) {
     const dataCurrentUser = await firestore.collection("users").doc(uid).get()
 
     let currentUser = dataCurrentUser.data()
-    //console.log(uid)
-    //setCurrentUser({ ...currentUser, id: uid });
 
     const followingUsers = await firestore
       .collection("users")
       .orderBy("points", "desc")
       .startAfter(lastFetchUser || 3000)
-      .limit(10)
+      .limit(15)
       .get();
 
     if (followingUsers.empty) {
@@ -91,20 +108,39 @@ export default function Ranking({ route, navigation }) {
     }
 
     followingUsers.forEach((userCred) => {
+      if (isInArray(userCred, users, "id")) return
+
       position++;
       setGlobalPosition(position);
       let user = userCred.data();
 
-      console.log(currentUser)
       if (!currentUser.following.includes(userCred.id)) return;
 
       let aUser = { ...user, id: userCred.id, position };
 
-      useGetUserImages(aUser, userCred.id, setUsers);
+
+      if (aUser.hasImage)
+        useGetUserImages(aUser, userCred.id, setUsers);
+      else
+        setUsers((users) => {
+          return [...users, aUser];
+        });
     });
 
     setIsLoadingData(false);
     setLastFetchUser(followingUsers.docs[followingUsers.docs.length - 1]);
+  }
+
+  function removeDuplicate() {
+    //Remove duplicate from Arraylist
+    const newArrayList = [];
+    users.forEach((obj) => {
+      if (!newArrayList.some((item) => item.id === obj.id)) {
+        newArrayList.push({ ...obj });
+      }
+    });
+
+    setUsers(newArrayList);
   }
 
   function handleScrollEnd() {
@@ -115,6 +151,11 @@ export default function Ranking({ route, navigation }) {
     } else {
       loadDefaultContent();
     }
+
+  }
+
+  function isInArray(obj, array, comparing) {
+    return array.some((item) => item[comparing] === obj[comparing]);
   }
 
   return (
@@ -122,6 +163,7 @@ export default function Ranking({ route, navigation }) {
       {pageType === 'default' ? <GenericHeader text="Ranking geral:" /> : <View></View>}
       {users.length > 0 && <FlatList
         data={users}
+        keyExtractor={item => item.id}
         renderItem={(users) => (
           <TouchableOpacity onPress={()=> {
               navigation.push('UserStack', {
@@ -132,7 +174,6 @@ export default function Ranking({ route, navigation }) {
           </TouchableOpacity>
         )}
         onEndReached={() => {
-          console.log("END OF SCROLL");
           handleScrollEnd();
         }}
         onEndReachedThreshold={0}

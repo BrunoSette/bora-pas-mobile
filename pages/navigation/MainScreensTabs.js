@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useContext, useState } from "react";
 import { View, Text, TabBarIOSItem } from "react-native";
 import { NavigationContainer } from "@react-navigation/native";
 import { createBottomTabNavigator } from "@react-navigation/bottom-tabs";
@@ -12,10 +12,14 @@ import GenericHeader from "../../shered-components/GenericHeader";
 import RankingStack from "./RankingStack";
 import GameMenu from "../game/GameMenu";
 import GameStack from "./GameStack";
+import NotificationsPage from "../notifications/NotificationsPage";
+import NotificationsStack from "./NotificationStack";
+import { GlobalContext } from "../../context/GlobalContext";
 
 const MainTabs = createMaterialBottomTabNavigator();
 
 export default function MainScreensTabs() {
+    const [globalState, setGlobaLState] = useContext(GlobalContext)
   return (
     <MainTabs.Navigator
       inactiveColor="rgb(200, 200, 200)"
@@ -28,7 +32,7 @@ export default function MainScreensTabs() {
       }}
       tabBarOptions={{
         tabBarOptions: {
-          showIcon: false,
+          showIcon: globalState.currentUser,
         },
       }}
     >
@@ -65,13 +69,14 @@ export default function MainScreensTabs() {
       />
       <MainTabs.Screen
         options={{
-          tabBarLabel: "Sobre",
+          tabBarLabel: "Notificações",
+          tabBarBadge: globalState.currentUser.pendingNotifications,
           tabBarIcon: ({ color }) => {
-            return <MaterialIcons name="pending" color={color} size={22} />;
+            return <MaterialIcons name="notifications" color={color} size={22} />;
           },
         }}
         name="Sobre"
-        component={Sobre}
+        component={NotificationsStack}
       />
     </MainTabs.Navigator>
   );

@@ -14,7 +14,6 @@ export default function LoginModal() {
   const [globalState, setGlobalState] = useContext(GlobalContext);
 
   function handleTouch() {
-    console.log('opa from touch')
     checkInputFields();
   }
 
@@ -35,17 +34,15 @@ export default function LoginModal() {
     auth
       .signInWithEmailAndPassword(email, password)
       .then((userCred) => {
-        console.log(userCred.additionalUserInfo.username)
         setGlobalState((globalState) => {
           return {
             ...globalState,
             currentUser: { ...globalState.currentUser, isLoggedIn: true },
           };
         });
-        console.log(globalState);
       })
       .catch((err) => {
-        setErrorMsg(err.message);
+        setErrorMsg('Email ou senha incorretos');
         setValidInputFields(false);
       });
   }

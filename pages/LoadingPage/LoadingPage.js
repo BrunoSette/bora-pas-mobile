@@ -2,13 +2,9 @@ import { auth, firestore } from '../../firebase/firebaseContext';
 import React, { useContext, useEffect, useState } from 'react'
 import { Image, Text, View } from 'react-native'
 import { GlobalContext } from '../../context/GlobalContext';
-//import loadingIcon from '../../assets/images/loading-icon.gif'
-//import './loadingPageStyle.css'
 
 export default function LoadingPage({navigation}) {
   const [globalState, setGlobalState] = useContext(GlobalContext);
-  const [isLoading, setIsLoading] = useState(true);
-  const [loggedIn, setLoggedIn] = useState(false)
   const { user } = globalState;
 
   useEffect(() => {
@@ -38,13 +34,6 @@ export default function LoadingPage({navigation}) {
       }
     });
   }, []);
-
-  /*if(!isLoading && loggedIn) {
-    navigation.navigate("Home");
-  } else if(!isLoading && !loggedIn) {
-    
-    navigation.navigate("Login");
-  }*/
 
     return (
       <View style={{justifyContent: 'center', justifySelf: 'center', alignContent: 'center', width: 300, alignSelf: 'center', height: '100%'}}>

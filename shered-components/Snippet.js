@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react'
-import { Text, View, StyleSheet } from 'react-native';
+import { Text, View, StyleSheet, Dimensions } from "react-native";
 //import BookLogo from "../public/images/icons/book-white-18dp.svg";
 import {BoxShadow} from 'react-native-shadow'
 import {LinearGradient} from 'expo-linear-gradient'
@@ -12,8 +12,13 @@ export default function Snippet({
   align,
   children,
   textSize,
-  width
+  width,
+  noPaddingBottom,
+  marginBottom,
 }) {
+
+  const windowWidth = Dimensions.get('window').width
+  const snippetWidth = (windowWidth * 9)/10
     
   return (
     <View
@@ -28,7 +33,7 @@ export default function Snippet({
     >
       <BoxShadow
         setting={{
-          width: size === "tiny" ? 85 : 330,
+          width: size === "tiny" ? 90 : snippetWidth,
           height:
             size === "small"
               ? 75
@@ -52,7 +57,10 @@ export default function Snippet({
               ? ["rgb(47, 163, 92)", "rgb(24, 153, 45)"]
               : ["rgb(255, 255, 255)", "rgb(245, 245, 245))"]
           }
-          style={styles["general"]}
+          style={[
+            styles["general"],
+            { paddingBottom: noPaddingBottom ? 0 : 15,}
+          ]}
         >
           <View
             style={{
