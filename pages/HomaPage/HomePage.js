@@ -55,7 +55,6 @@ export default function HomePage({ navigation }) {
 
     function getFollowingUsers() {
       setIsLoadingData(true);
-      let position = 0;
 
       firestore
         .collection("users")
@@ -74,7 +73,8 @@ export default function HomePage({ navigation }) {
             false
           );
 
-            const following = currentUser.following;
+         
+             const following = currentUser.following;
             following.forEach((id) => { 
               console.log(id);
               firestore
@@ -97,7 +97,7 @@ export default function HomePage({ navigation }) {
                   setIsLoadingFollowing(false);
                 })
                 .catch((err) => console.log(err));
-                setIsLoadingFollowing(false);
+    
 
                 function getUserImages(user, id, callback) {
                   storage

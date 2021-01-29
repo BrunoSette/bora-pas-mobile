@@ -201,11 +201,40 @@ export default function UserPage({ route, navigation }) {
       .toString();
   }
 
+  /*async function openImagePicker() {
+    console.log("try to open picker");
+    const { status } = await ImagePicker.getMediaLibraryPermissionsAsync();
+    const errerMsg = "Não foi possível acessar suas fotos";
+
+    if (status === "granted") {
+      let result;
+      try {
+        result = await ImagePicker.launchImageLibraryAsync({
+          mediaTypes: ImagePicker.MediaTypeOptions.All,
+          allowsEditing: true,
+          aspect: [1, 1],
+          quality: 1,
+        });
+      } catch (err) {
+        console.log(err);
+        setErrorMsg(errorMsg);
+      }
+
+      if (!result.cancelled) setUserImagePreview(result.uri);
+    } else {
+      ImagePicker.getMediaLibraryPermissionsAsync();
+      setErrorMsg(errorMsg);
+    }
+  }*/
+
   return (
     <ScrollView>
       <View style={{ flex: 1, alignItems: "center", marginTop: 30 }}>
         <View style={styles["mainInfoContainer"]}>
           <Image
+            onPress={()=> {
+              if(editMode) openImagePicker()
+            }}
             style={{ width: 110, height: 110, borderRadius: 110, zIndex: -100 }}
             source={
               user.hasImage
