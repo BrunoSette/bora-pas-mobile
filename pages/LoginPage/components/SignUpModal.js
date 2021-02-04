@@ -72,12 +72,14 @@ export default function LoginModal() {
         uploadImageFile();
         createUserReferences();
 
-        setGlobalState((globalState) => {
-          return {
-            ...globalState,
-            user: { ...globalState.user, isLoggedIn: true },
-          };
-        });
+        setTimeOut(()=> {
+          setGlobalState((globalState) => {
+            return {
+              ...globalState,
+              user: { ...globalState.user, isLoggedIn: true },
+            };
+          });
+        }, 2000)
       })
       .catch((err) => {
         setTimeout(() => {

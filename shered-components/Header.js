@@ -25,7 +25,7 @@ export default function Header() {
 
   const [globalState, setGlobalState] = useContext(GlobalContext);
   let { currentUser } = globalState;
-  let user;
+  const [user, setUser] = useState(currentUser || null);
 
   const [uid, setUid] = useState(false)
 
@@ -56,9 +56,12 @@ export default function Header() {
           .collection("users")
           .doc(uid)
           .get()
-          .then((user) =>
-            setUsername(user.data() ? user.data().username : "username")
-          );
+          .then((userCred) => {
+            let user = userCred.data()
+            setUsername(user ? user.username : "username")
+          
+            if(user.hasImage) getUserImage()
+          });
       } catch {
         setUsername("username");
       }
@@ -82,7 +85,6 @@ export default function Header() {
 
     checkIfUserIsAdmin();
     getUsername();
-    getUserImage();
   }, [uid]);
 
   useEffect(() => {
@@ -150,7 +152,14 @@ export default function Header() {
 
     data.forEach((doc) => {
       const user = { ...doc.data(), id: doc.id };
-      getUserImages(user, doc.id, setResults);
+      if(user.hasImage) {
+        getUserImages(user, doc.id, setResults);
+      } else {
+        setResults(results => {
+          return [...results, user]
+        })
+      }
+      
     });
 
     function getUserImages(user, id, callback) {

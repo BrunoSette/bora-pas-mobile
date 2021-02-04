@@ -237,7 +237,7 @@ export default function UserPage({ route, navigation }) {
             }}
             style={{ width: 110, height: 110, borderRadius: 110, zIndex: -100 }}
             source={
-              user.hasImage
+              (user.hasImage && user.image)
                 ? { uri: user.image }
                 : require("../../assets/images/user-default-image.png")
             }
@@ -336,7 +336,7 @@ export default function UserPage({ route, navigation }) {
                       );
                     })}
                 </Text>
-                {(isFollowing && isFollowing.length) > 2 ? (
+                {(isFollowing && isFollowing.length) >= 2 ? (
                   <TouchableOpacity
                     onPress={() => {
                       navigation.navigate("RankingStack", {

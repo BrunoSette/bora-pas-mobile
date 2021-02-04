@@ -72,9 +72,13 @@ export default function HomePage({ navigation }) {
             setCurrentUser,
             false
           );
-
          
              const following = currentUser.following;
+             if (following.length === 0 || !following) {
+               setIsLoadingFollowing(false);
+               return;
+             }
+
             following.forEach((id) => { 
               console.log(id);
               firestore
@@ -96,7 +100,9 @@ export default function HomePage({ navigation }) {
                   }
                   setIsLoadingFollowing(false);
                 })
-                .catch((err) => console.log(err));
+                .catch((err) => {
+                  setIsLoadingFollowing(false);
+                })
     
 
                 function getUserImages(user, id, callback) {

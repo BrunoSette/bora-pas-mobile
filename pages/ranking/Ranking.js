@@ -2,7 +2,7 @@ import React, { useContext, useEffect, useState } from "react";
 import { View, Text, FlatList, Dimensions, ActivityIndicator } from "react-native";
 import { ScrollView, TouchableOpacity } from "react-native-gesture-handler";
 import { GlobalContext } from "../../context/GlobalContext";
-import { firestore } from "../../firebase/firebaseContext";
+import { firestore, storage } from "../../firebase/firebaseContext";
 import { useGetUserImages } from "../../hooks&functions/useGetUserImages";
 import GenericHeader from "../../shered-components/GenericHeader";
 import User from "../../shered-components/User";
@@ -95,40 +95,54 @@ export default function Ranking({ route, navigation }) {
 
     let currentUser = dataCurrentUser.data()
 
-    const followingUsers = await firestore
-      .collection("users")
-      .orderBy("points", "desc")
-      .startAfter(lastFetchUser || 3000)
-      .limit(15)
-      .get();
+    const following = currentUser.following;
 
-    if (followingUsers.empty) {
-      setIsLoadingData(false);
-      setIsDataEmpty(true);
-    }
+    following.forEach((id) => {
+      console.log(id);
+      firestore
+        .collection("users")
+        .doc(id)
+        .get()
+        .then((userCred) => {
+          const user = { ...userCred.data(), id: userCred.id };
+          console.log(user);
+          if (user.hasImage) {
+            getUserImages(user, userCred.id, setUsers);
+          } else {
+            setUsers((users) => {
+              return [...users, user].sort((a, b) => {
+                return b.points - a.points;
+              });
+            });
+          }
+          setIsLoadingData(false);
+        })
+        .catch((err) => console.log(err));
 
-    followingUsers.forEach((userCred) => {
-      if (isInArray(userCred, users, "id")) return
+      function getUserImages(user, id, callback) {
+        storage
+          .ref(`/users/${id}/profileImage`)
+          .getDownloadURL()
+          .then((url) => {
+            user = { ...user, image: url };
+            callback((users) => {
+              const sorted = [...users, user].sort((a, b) => {
+                return b.points - a.points;
+              });
+              let position = 0;
+              return sorted.map((user) => {
+                position++;
+                return { ...user, position };
+              });
+            });
+          });
 
-      position++;
-      setGlobalPosition(position);
-      let user = userCred.data();
-
-      if (!currentUser.following.includes(userCred.id)) return;
-
-      let aUser = { ...user, id: userCred.id, position };
-
-
-      if (aUser.hasImage)
-        useGetUserImages(aUser, userCred.id, setUsers);
-      else
-        setUsers((users) => {
-          return [...users, aUser];
-        });
+        return null;
+      }
     });
 
     setIsLoadingData(false);
-    setLastFetchUser(followingUsers.docs[followingUsers.docs.length - 1]);
+    //setLastFetchUser(followingUsers.docs[followingUsers.docs.length - 1]);
   }
 
   function removeDuplicate() {
@@ -144,13 +158,11 @@ export default function Ranking({ route, navigation }) {
   }
 
   function handleScrollEnd() {
-    if (isDataEmpty) return;
+    if (isDataEmpty || isFollowingPage) return;
 
-    if (isFollowingPage) {
-      loadFollowingUsers();
-    } else {
+
       loadDefaultContent();
-    }
+    
 
   }
 
